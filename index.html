@@ -167,6 +167,25 @@ function stopMic(){
 function micClick(){if(state.listening)stopMic();else startMic()}
 function sendClick(){if(state.inp.trim())parseExpense(state.inp.trim())}
 
+function openManualAdd(){
+  const now=new Date();
+  setState({
+    sheet:"open",
+    sheetData:{
+      id:null,
+      date_time:now.toISOString(),
+      amount:"",
+      category:"Miscellaneous",
+      location:"",
+      people:"",
+      splitwise:false,
+      splitwise_note:"",
+      comments:"",
+      payment_mode:state.defPay||""
+    }
+  });
+}
+
 // ==================== ACTIONS ====================
 function saveExpense(){
   const d=state.sheetData;if(!d)return;
@@ -244,6 +263,7 @@ function render(){
     html+=`<div class="header"><div class="brand">Dhriti</div><div><div class="month-label">${now.toLocaleString("en-IN",{month:"long",year:"numeric"}).toUpperCase()}</div><div class="total">${fmt(curTotal)}</div></div></div>`;
     html+=`<div class="input-bar"><input class="text-input" id="mainInput" placeholder="${s.processing?"Dhriti is thinking...":"What did you spend on?"}" value="${esc(s.inp)}" ${s.processing?"disabled":""}><button class="mic-btn ${s.listening?"active":"idle"}" onclick="micClick()">🎤</button>`;
     if(s.inp.trim()&&!s.listening)html+=`<button class="send-btn" onclick="sendClick()">↑</button>`;
+    html+=`<button class="send-btn" onclick="openManualAdd()" title="Add manually" style="background:#1A1A1A;border:1px solid #4FD1C5;font-size:22px;color:#4FD1C5">+</button>`;
     html+=`</div>`;
     if(s.listening)html+=`<div style="text-align:center;color:#FC8181;font-size:12px;margin-bottom:8px">Listening... tap mic to stop</div>`;
     if(s.processing)html+=`<div style="text-align:center;color:#4FD1C5;font-size:12px;margin-bottom:8px">Dhriti is thinking...</div>`;
