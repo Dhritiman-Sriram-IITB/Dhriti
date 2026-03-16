@@ -1,347 +1,439 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { Home, BarChart3, Sparkles, Settings, Mic, ArrowUp, ChevronLeft, ChevronRight, Download, AlertTriangle, TrendingUp, CheckCircle, Send, Wallet, Utensils, ShoppingCart, Car, ShoppingBag, Film, FileText, HeartPulse, Plane, Briefcase, Layers, RefreshCw } from "lucide-react";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-
-const CATS = [
-  { name: "Dining Out", color: "#FC8181", icon: Utensils },
-  { name: "Groceries", color: "#68D391", icon: ShoppingCart },
-  { name: "Transport", color: "#63B3ED", icon: Car },
-  { name: "Shopping", color: "#B794F4", icon: ShoppingBag },
-  { name: "Entertainment", color: "#F687B3", icon: Film },
-  { name: "Bills & Utilities", color: "#A0AEC0", icon: FileText },
-  { name: "Health", color: "#4FD1C5", icon: HeartPulse },
-  { name: "Travel", color: "#F6AD55", icon: Plane },
-  { name: "Work", color: "#76E4F7", icon: Briefcase },
-  { name: "Miscellaneous", color: "#A0A0A0", icon: Layers }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Dhriti</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:#0F0F0F;margin:0;font-family:'Inter',sans-serif;color:#E2E2E2;font-size:14px}
+input::placeholder{color:#555}
+::-webkit-scrollbar{display:none}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:80px}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#2D2D2D;color:#E2E2E2;padding:10px 20px;border-radius:12px;font-size:13px;z-index:9999;max-width:90%;text-align:center;border:1px solid #333;animation:fadeIn .2s}
+.header{padding:16px 16px 0;display:flex;justify-content:space-between;align-items:flex-start}
+.brand{color:#FFF;font-size:22px;font-weight:700}
+.month-label{color:#737373;font-size:11px;text-align:right;letter-spacing:1px}
+.total{color:#FFF;font-size:22px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.input-bar{padding:12px 16px;display:flex;gap:8px;align-items:center;position:sticky;top:0;background:#0F0F0F;z-index:50}
+.text-input{flex:1;background:#1A1A1A;border:1px solid #252525;border-radius:12px;padding:12px 14px;color:#E2E2E2;font-size:14px;outline:none;font-family:inherit}
+.mic-btn{width:44px;height:44px;border-radius:50%;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:18px;color:#FFF}
+.mic-btn.idle{background:#4FD1C5}
+.mic-btn.active{background:#FC8181;animation:pulse 1.5s infinite}
+.send-btn{width:44px;height:44px;border-radius:50%;background:#4FD1C5;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;color:#FFF;font-size:18px}
+.card{background:#1A1A1A;border:1px solid #252525;border-radius:12px;padding:14px;cursor:pointer;animation:fadeIn .3s}
+.empty{text-align:center;padding:60px 20px;color:#737373}
+.fi{width:100%;background:#252525;border:1px solid #333;border-radius:10px;padding:10px 12px;color:#E2E2E2;font-size:14px;outline:none;font-family:inherit;box-sizing:border-box}
+.lb{color:#737373;font-size:12px;margin-top:14px;margin-bottom:6px}
+.chip{padding:6px 14px;border-radius:999px;font-size:12px;cursor:pointer;white-space:nowrap;font-family:inherit;background:transparent}
+.chip.active{color:#FFF}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;height:64px;background:#111;border-top:1px solid #1F1F1F;display:flex;z-index:100}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;font-size:10px;background:none;border:none;font-family:inherit}
+.nav-item.active{color:#4FD1C5;font-weight:600}
+.nav-item.inactive{color:#737373;font-weight:400}
+.overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:#1A1A1A;border-radius:16px 16px 0 0;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;padding:12px 20px 32px}
+.handle{width:40px;height:4px;border-radius:2px;background:#444;margin:0 auto 16px}
+.save-btn{width:100%;padding:14px;border-radius:12px;background:#4FD1C5;color:#000;font-weight:700;font-size:15px;border:none;cursor:pointer;margin-top:18px;font-family:inherit}
+.del-btn{background:none;border:none;color:#FC8181;font-size:13px;cursor:pointer;margin-top:10px;font-family:inherit;text-align:center;width:100%}
+.toggle{width:42px;height:24px;border-radius:12px;border:none;cursor:pointer;position:relative}
+.toggle-knob{width:18px;height:18px;border-radius:50%;background:#FFF;position:absolute;top:3px;transition:left .2s}
+.donut-container{display:flex;justify-content:center;margin:12px 0}
+.bar-row{display:flex;align-items:flex-end;gap:2px;height:120px;padding:0 4px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.bar-fill{width:100%;min-width:4px;border-radius:3px 3px 0 0;transition:height .5s}
+.bar-label{font-size:8px;color:#737373;margin-top:4px}
+.progress-bg{height:6px;border-radius:3px;background:#252525}
+.progress-fill{height:6px;border-radius:3px}
+.flag-card{border-left:3px solid;animation:fadeIn .3s}
+.chat-bubble{border-radius:12px;padding:8px 12px;max-width:80%;font-size:13px;line-height:1.5}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+<script>
+// ==================== DATA ====================
+const CATS=[
+{name:"Dining Out",color:"#FC8181",emoji:"🍽️"},
+{name:"Groceries",color:"#68D391",emoji:"🛒"},
+{name:"Transport",color:"#63B3ED",emoji:"🚗"},
+{name:"Shopping",color:"#B794F4",emoji:"🛍️"},
+{name:"Entertainment",color:"#F687B3",emoji:"🎬"},
+{name:"Bills & Utilities",color:"#A0AEC0",emoji:"📄"},
+{name:"Health",color:"#4FD1C5",emoji:"💊"},
+{name:"Travel",color:"#F6AD55",emoji:"✈️"},
+{name:"Work",color:"#76E4F7",emoji:"💼"},
+{name:"Miscellaneous",color:"#A0A0A0",emoji:"📦"}
 ];
-const PAYS = ["GPay", "Card", "Net Banking", "Cash", "UPI", "Other"];
-const uid = () => Math.random().toString(36).slice(2, 11) + Date.now().toString(36);
-const fmt = n => "₹" + Number(n).toLocaleString("en-IN");
-const fmtTime = d => { try { const dt = new Date(d); return isNaN(dt.getTime()) ? "" : dt.toLocaleString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true }); } catch { return ""; } };
-const fmtDMY = d => { try { const dt = new Date(d); if (isNaN(dt.getTime())) return ""; return String(dt.getDate()).padStart(2, "0") + "/" + String(dt.getMonth() + 1).padStart(2, "0") + "/" + dt.getFullYear(); } catch { return ""; } };
-const toDateVal = d => { try { const dt = new Date(d); if (isNaN(dt.getTime())) return ""; return dt.getFullYear() + "-" + String(dt.getMonth() + 1).padStart(2, "0") + "-" + String(dt.getDate()).padStart(2, "0"); } catch { return ""; } };
-const toTimeVal = d => { try { const dt = new Date(d); if (isNaN(dt.getTime())) return ""; return String(dt.getHours()).padStart(2, "0") + ":" + String(dt.getMinutes()).padStart(2, "0"); } catch { return ""; } };
+const PAYS=["GPay","Card","Net Banking","Cash","UPI","Other"];
+const uid=()=>Math.random().toString(36).slice(2,11)+Date.now().toString(36);
+const fmt=n=>"₹"+Number(n).toLocaleString("en-IN");
+const fmtTime=d=>{try{const dt=new Date(d);return isNaN(dt.getTime())?"":dt.toLocaleString("en-IN",{hour:"numeric",minute:"2-digit",hour12:true})}catch{return""}};
+const fmtDMY=d=>{try{const dt=new Date(d);if(isNaN(dt.getTime()))return"";return String(dt.getDate()).padStart(2,"0")+"/"+String(dt.getMonth()+1).padStart(2,"0")+"/"+dt.getFullYear()}catch{return""}};
+const toDateVal=d=>{try{const dt=new Date(d);if(isNaN(dt.getTime()))return"";return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0")}catch{return""}};
+const toTimeVal=d=>{try{const dt=new Date(d);if(isNaN(dt.getTime()))return"";return String(dt.getHours()).padStart(2,"0")+":"+String(dt.getMinutes()).padStart(2,"0")}catch{return""}};
+const getLabel=d=>{try{const t=new Date();t.setHours(0,0,0,0);const x=new Date(d);if(isNaN(x.getTime()))return"Unknown";x.setHours(0,0,0,0);const diff=Math.round((t-x)/864e5);if(diff===0)return"Today";if(diff===1)return"Yesterday";return fmtDMY(d)+" — "+x.toLocaleDateString("en-IN",{weekday:"long"})}catch{return"Unknown"}};
+const groupByDate=exps=>{const sorted=[...exps].sort((a,b)=>new Date(b.date_time)-new Date(a.date_time));const g=[];let last=null;sorted.forEach(e=>{const l=getLabel(e.date_time);if(l!==last){g.push({label:l,items:[]});last=l}g[g.length-1].items.push(e)});return g};
+const esc=s=>{const d=document.createElement("div");d.textContent=s;return d.innerHTML};
 
-const getLabel = d => {
-  try { const t = new Date(); t.setHours(0, 0, 0, 0); const x = new Date(d); if (isNaN(x.getTime())) return "Unknown"; x.setHours(0, 0, 0, 0); const diff = Math.round((t - x) / 864e5); if (diff === 0) return "Today"; if (diff === 1) return "Yesterday"; return fmtDMY(d) + " — " + x.toLocaleDateString("en-IN", { weekday: "long" }); } catch { return "Unknown"; }
+// ==================== STATE ====================
+let state={
+  tab:"home",exps:[],inp:"",listening:false,processing:false,
+  sheet:null,sheetData:null,apiKey:"",budget:"",defPay:"",
+  toast:null,insights:null,insLoading:false,
+  qa:[],qaInp:"",qaLoad:false,
+  dm:{m:new Date().getMonth(),y:new Date().getFullYear()},
+  confirmClear:0
 };
+let toastTimer=null;
+let recRef=null;
+let transRef="";
 
-const grpByDate = exps => {
-  const sorted = [...exps].sort((a, b) => new Date(b.date_time) - new Date(a.date_time));
-  const g = []; let last = null;
-  sorted.forEach(e => { const l = getLabel(e.date_time); if (l !== last) { g.push({ label: l, items: [] }); last = l; } g[g.length - 1].items.push(e); });
-  return g;
-};
-
-const CatIcon = ({ name, sz = 16 }) => {
-  const c = CATS.find(x => x.name === name) || CATS[9];
-  const I = c.icon;
-  return <div style={{ width: sz + 12, height: sz + 12, borderRadius: "50%", background: c.color + "22", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><I size={sz} color={c.color} /></div>;
-};
-
-export default function App() {
-  const [tab, setTab] = useState("home");
-  const [exps, setExps] = useState([]);
-  const [inp, setInp] = useState("");
-  const [listening, setListening] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [sheet, setSheet] = useState(null);
-  const [sheetData, setSheetData] = useState(null);
-  const [budget, setBudget] = useState("");
-  const [defPay, setDefPay] = useState("");
-  const [toast, setToast] = useState(null);
-  const [insights, setInsights] = useState(null);
-  const [insLoading, setInsLoading] = useState(false);
-  const [qa, setQa] = useState([]);
-  const [qaInp, setQaInp] = useState("");
-  const [qaLoad, setQaLoad] = useState(false);
-  const [dm, setDm] = useState(() => { const d = new Date(); return { m: d.getMonth(), y: d.getFullYear() }; });
-  const [confirmClear, setConfirmClear] = useState(0);
-  const recRef = useRef(null);
-  const transRef = useRef("");
-
-  const show = m => setToast(m);
-  useEffect(() => { if (toast) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t); } }, [toast]);
-
-  const callAI = useCallback(async (prompt, json = true) => {
-    try {
-      const r = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, messages: [{ role: "user", content: json ? prompt + "\n\nIMPORTANT: Return ONLY valid JSON. No markdown, no backticks, no preamble." : prompt }] })
-      });
-      if (!r.ok) { show("AI error (" + r.status + "). Try again."); return null; }
-      const d = await r.json();
-      const t = d.content?.map(c => c.type === "text" ? c.text : "").filter(Boolean).join("\n");
-      if (!t) { show("Empty AI response."); return null; }
-      if (!json) return t;
-      try { return JSON.parse(t.replace(/```json\s*/g, "").replace(/```\s*/g, "").trim()); } catch { show("Bad AI format. Try again."); return null; }
-    } catch (e) { console.error(e); show("Request failed. Try again."); return null; }
-  }, []);
-
-  const parseTime = (timeStr) => {
-    if (!timeStr) return null;
-    const raw = String(timeStr).trim();
-    const isPM = /pm/i.test(raw);
-    const isAM = /am/i.test(raw);
-    const cleaned = raw.replace(/\s*(am|pm)\s*/gi, "").trim();
-    const parts = cleaned.split(/[:.]/);
-    let h = parseInt(parts[0]) || 0;
-    let m = parseInt(parts[1]) || 0;
-    if (isPM && h < 12) h += 12;
-    if (isAM && h === 12) h = 0;
-    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) return { h, m };
-    return null;
-  };
-
-  const parse = useCallback(async raw => {
-    if (!raw.trim()) return;
-    setProcessing(true);
-    const now = new Date();
-    const p = `You are Dhriti's expense parser. Extract structured data from messy natural language.
-
-Return ONLY valid JSON:
-{"amount":<number>,"location":"<merchant>","category":"<one of: Dining Out, Groceries, Transport, Shopping, Entertainment, Bills & Utilities, Health, Travel, Work, Miscellaneous>","date":"<YYYY-MM-DD, default ${now.toISOString().split("T")[0]}>","time":"<HH:MM in 24-hour format, default ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}>","people":"<names or empty>","splitwise":false,"splitwise_note":"","comments":"<extra context or empty>","payment_mode":"<GPay|Card|Net Banking|Cash|UPI|Other or empty>"}
-
-RULES: Ignore fillers (hello,hi,so,um,uh,like,basically). Ignore stutters. Parse dates naturally (first March=2026-03-01, yesterday, last Friday). ALWAYS return time in 24-hour HH:MM (18:46 not 6:46 PM). Map payments (credit card→Card, Google Pay→GPay, PhonePe→UPI). Auto-categorize from merchant. Extract people (with my parents→Parents). Food items/products→comments.
-
-User: ${raw}`;
-    const res = await callAI(p);
-    setProcessing(false);
-    if (!res) return;
-    const amt = Number(String(res.amount).replace(/[₹,\s]/g, ""));
-    if (!amt || isNaN(amt)) { show("Couldn't find an amount."); return; }
-    let dt = now;
-    try {
-      const dateStr = res.date || now.toISOString().split("T")[0];
-      let h = now.getHours(), m = now.getMinutes();
-      const parsed = parseTime(res.time);
-      if (parsed) { h = parsed.h; m = parsed.m; }
-      const candidate = new Date(dateStr + "T" + String(h).padStart(2, "0") + ":" + String(m).padStart(2, "0") + ":00");
-      if (!isNaN(candidate.getTime())) dt = candidate;
-    } catch {}
-    setSheetData({ id: null, date_time: dt.toISOString(), amount: amt, category: res.category || "Miscellaneous", location: res.location || "", people: res.people || "", splitwise: !!res.splitwise, splitwise_note: res.splitwise_note || "", comments: res.comments || "", payment_mode: res.payment_mode || defPay || "" });
-    setSheet("open");
-    setInp("");
-  }, [callAI, defPay]);
-
-  const startMic = useCallback(async () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { show("Voice not supported. Try Chrome."); return; }
-    try {
-      const r = new SR(); r.lang = "en-IN"; r.continuous = true; r.interimResults = true; transRef.current = "";
-      r.onresult = e => { let f = "", i = ""; for (let j = 0; j < e.results.length; j++) { if (e.results[j].isFinal) f += e.results[j][0].transcript + " "; else i += e.results[j][0].transcript; } transRef.current = f; setInp(f + i); };
-      r.onerror = e => { setListening(false); show(e.error === "not-allowed" ? "Voice works after export — type your expense here for now!" : "Voice error. Type instead."); };
-      r.onend = () => {};
-      recRef.current = r; r.start(); setListening(true);
-    } catch { show("Voice works after export — type your expense here for now!"); }
-  }, []);
-
-  const stopMic = useCallback(() => { if (recRef.current) { try { recRef.current.stop(); } catch {} recRef.current = null; } setListening(false); const t = (transRef.current || "").trim() || inp.trim(); if (t) parse(t); }, [inp, parse]);
-  const micClick = useCallback(() => { if (listening) stopMic(); else startMic(); }, [listening, stopMic, startMic]);
-  const sendClick = useCallback(() => { if (inp.trim()) parse(inp.trim()); }, [inp, parse]);
-  const save = useCallback(d => { if (d.id) setExps(p => p.map(e => e.id === d.id ? { ...d } : e)); else setExps(p => [{ ...d, id: uid(), created_at: new Date().toISOString() }, ...p]); setSheet(null); setSheetData(null); }, []);
-  const del = useCallback(id => { setExps(p => p.filter(e => e.id !== id)); setSheet(null); setSheetData(null); }, []);
-
-  const nowM = new Date();
-  const curExps = useMemo(() => exps.filter(e => { const d = new Date(e.date_time); return d.getMonth() === nowM.getMonth() && d.getFullYear() === nowM.getFullYear(); }), [exps]);
-  const curTotal = useMemo(() => curExps.reduce((s, e) => s + (Number(e.amount) || 0), 0), [curExps]);
-  const mExps = useMemo(() => exps.filter(e => { const d = new Date(e.date_time); return d.getMonth() === dm.m && d.getFullYear() === dm.y; }), [exps, dm]);
-  const mTotal = useMemo(() => mExps.reduce((s, e) => s + (Number(e.amount) || 0), 0), [mExps]);
-  const catData = useMemo(() => { const m = {}; mExps.forEach(e => { m[e.category] = (m[e.category] || 0) + Number(e.amount); }); return CATS.map(c => ({ name: c.name, value: m[c.name] || 0, color: c.color })).filter(c => c.value > 0).sort((a, b) => b.value - a.value); }, [mExps]);
-  const dailyData = useMemo(() => { const days = new Date(dm.y, dm.m + 1, 0).getDate(); const m = {}; mExps.forEach(e => { const d = new Date(e.date_time).getDate(); m[d] = (m[d] || 0) + Number(e.amount); }); return Array.from({ length: days }, (_, i) => ({ day: i + 1, amount: m[i + 1] || 0 })); }, [mExps, dm]);
-  const avgD = useMemo(() => { const d = dailyData.filter(x => x.amount > 0); return d.length ? Math.round(mTotal / d.length) : 0; }, [dailyData, mTotal]);
-  const topM = useMemo(() => { const m = {}; mExps.forEach(e => { const k = e.location || "Unknown"; if (!m[k]) m[k] = { a: 0, c: 0 }; m[k].a += Number(e.amount); m[k].c++; }); return Object.entries(m).map(([n, v]) => ({ name: n, amount: v.a, count: v.c })).sort((a, b) => b.amount - a.amount).slice(0, 5); }, [mExps]);
-  const payData = useMemo(() => { const m = {}; mExps.forEach(e => { const p = e.payment_mode || "Not set"; m[p] = (m[p] || 0) + Number(e.amount); }); return Object.entries(m).map(([n, v]) => ({ name: n, value: v })).sort((a, b) => b.value - a.value); }, [mExps]);
-  const grps = useMemo(() => grpByDate(exps), [exps]);
-  const mName = new Date(dm.y, dm.m).toLocaleString("en-IN", { month: "long", year: "numeric" });
-
-  const loadIns = useCallback(async () => {
-    if (curExps.length === 0) { show("Add expenses first!"); return; }
-    setInsLoading(true);
-    const p = `You are Dhriti, a personal finance assistant. Be conversational, specific with numbers, like a smart friend. Not preachy.\n\nReturn ONLY JSON: {"summary":"<3-5 sentences with amounts>","flags":[{"type":"<warning|caution|positive>","title":"<5-8 words>","detail":"<1-2 sentences with numbers>"}]}\n3-6 flags, at least one positive.\n\nData: ${JSON.stringify(curExps.map(e => ({ amount: e.amount, category: e.category, location: e.location, date: e.date_time, people: e.people })))}\nTotal: ${fmt(curTotal)}`;
-    const d = await callAI(p); setInsLoading(false); if (d) setInsights(d);
-  }, [curExps, curTotal, callAI]);
-
-  const askQ = useCallback(async () => {
-    if (!qaInp.trim()) return; const q = qaInp.trim();
-    setQa(p => [...p, { role: "user", text: q }]); setQaInp(""); setQaLoad(true);
-    const p = `You are Dhriti, expense tracker assistant. Answer with exact numbers, 2-4 sentences.\n\nData: ${JSON.stringify(exps.map(e => ({ amount: e.amount, category: e.category, location: e.location, date: e.date_time, people: e.people, payment: e.payment_mode, comments: e.comments })))}\n\nQuestion: ${q}`;
-    const a = await callAI(p, false); setQaLoad(false); setQa(prev => [...prev, { role: "ai", text: a || "Sorry, couldn't figure that out." }]);
-  }, [qaInp, exps, callAI]);
-
-  const exportCSV = () => {
-    if (!exps.length) { show("No expenses."); return; }
-    const h = "Date & Time,Amount,Category,Location,People,Splitwise,Splitwise Note,Payment Mode,Comments";
-    const rows = exps.map(e => [fmtDMY(e.date_time) + " " + fmtTime(e.date_time), e.amount, e.category, `"${e.location}"`, `"${e.people}"`, e.splitwise ? "Yes" : "No", `"${e.splitwise_note}"`, e.payment_mode, `"${e.comments}"`].join(","));
-    const b = new Blob([h + "\n" + rows.join("\n")], { type: "text/csv" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = `dhriti-expenses-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}.csv`; a.click();
-  };
-
-  const cs = {
-    app: { background: "#0F0F0F", color: "#E2E2E2", minHeight: "100vh", maxWidth: 480, margin: "0 auto", fontFamily: "'Inter',sans-serif", position: "relative", paddingBottom: 80, fontSize: 14 },
-    nav: { position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)", width: "100%", maxWidth: 480, height: 64, background: "#111", borderTop: "1px solid #1F1F1F", display: "flex", zIndex: 100 },
-    navI: a => ({ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, color: a ? "#4FD1C5" : "#737373", cursor: "pointer", fontSize: 10, fontWeight: a ? 600 : 400, background: "none", border: "none", fontFamily: "inherit" }),
-    card: { background: "#1A1A1A", border: "1px solid #252525", borderRadius: 12, padding: 14, cursor: "pointer" },
-    empty: { textAlign: "center", padding: "60px 20px", color: "#737373" },
-    fi: { width: "100%", background: "#252525", border: "1px solid #333", borderRadius: 10, padding: "10px 12px", color: "#E2E2E2", fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" },
-    chip: (a, c) => ({ padding: "6px 14px", borderRadius: 999, border: `1px solid ${c || "#444"}`, background: a ? (c || "#4FD1C5") + "33" : "transparent", color: a ? "#FFF" : "#999", fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit" }),
-    lb: { color: "#737373", fontSize: 12, marginTop: 14, marginBottom: 6 },
-  };
-
-  return (
-    <div style={cs.app}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}body{background:#0F0F0F;margin:0}input::placeholder{color:#555}::-webkit-scrollbar{display:none}@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}`}</style>
-
-      {toast && <div style={{ position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", background: "#2D2D2D", color: "#E2E2E2", padding: "10px 20px", borderRadius: 12, fontSize: 13, zIndex: 9999, maxWidth: "90%", textAlign: "center", border: "1px solid #333" }}>{toast}</div>}
-
-      {/* HOME */}
-      {tab === "home" && <div>
-        <div style={{ padding: "16px 16px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div style={{ color: "#FFF", fontSize: 22, fontWeight: 700 }}>Dhriti</div>
-          <div><div style={{ color: "#737373", fontSize: 11, textAlign: "right", letterSpacing: 1 }}>{new Date().toLocaleString("en-IN", { month: "long", year: "numeric" }).toUpperCase()}</div><div style={{ color: "#FFF", fontSize: 22, fontWeight: 700, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{fmt(curTotal)}</div></div>
-        </div>
-        <div style={{ padding: "12px 16px", display: "flex", gap: 8, alignItems: "center", position: "sticky", top: 0, background: "#0F0F0F", zIndex: 50 }}>
-          <input style={{ flex: 1, background: "#1A1A1A", border: "1px solid #252525", borderRadius: 12, padding: "12px 14px", color: "#E2E2E2", fontSize: 14, outline: "none", fontFamily: "'Inter',sans-serif" }} placeholder={processing ? "Dhriti is thinking..." : "What did you spend on?"} value={inp} onChange={e => setInp(e.target.value)} onKeyDown={e => { if (e.key === "Enter") sendClick(); }} disabled={processing} />
-          <button onClick={micClick} disabled={processing} style={{ width: 44, height: 44, borderRadius: "50%", background: listening ? "#FC8181" : "#4FD1C5", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, animation: listening ? "pulse 1.5s infinite" : "none" }}><Mic size={20} color="#FFF" /></button>
-          {inp.trim() && !listening && <button onClick={sendClick} disabled={processing} style={{ width: 44, height: 44, borderRadius: "50%", background: "#4FD1C5", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}><ArrowUp size={20} color="#FFF" /></button>}
-        </div>
-        {listening && <div style={{ textAlign: "center", color: "#FC8181", fontSize: 12, marginBottom: 8 }}>Listening... tap mic to stop</div>}
-        {processing && <div style={{ textAlign: "center", color: "#4FD1C5", fontSize: 12, marginBottom: 8 }}>Dhriti is thinking...</div>}
-        <div style={{ padding: "0 16px" }}>
-          {exps.length === 0 ? <div style={cs.empty}><Wallet size={48} color="#444" style={{ marginBottom: 16 }} /><div style={{ fontSize: 15, color: "#888", marginBottom: 6 }}>No expenses yet</div><div style={{ fontSize: 13 }}>Tap the mic or type above to add your first one!</div></div>
-          : grps.map((g, gi) => <div key={gi}>
-            <div style={{ color: "#737373", fontSize: 12, padding: "14px 0 8px", borderBottom: "1px solid #1A1A1A" }}>{g.label}</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 10 }}>
-              {g.items.map(e => <div key={e.id} style={{ ...cs.card, animation: "fadeIn .3s" }} onClick={() => { setSheetData({ ...e }); setSheet("open"); }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <CatIcon name={e.category} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: "#FFF", fontWeight: 600, fontSize: 14 }}>{e.location || "Unknown"}</div>
-                    <div style={{ color: "#737373", fontSize: 12 }}>{e.category}</div>
-                    <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
-                      {e.people && e.people.split(",").map((p, i) => <span key={i} style={{ fontSize: 10, color: "#999", border: "1px solid #333", borderRadius: 999, padding: "1px 8px" }}>{p.trim()}</span>)}
-                      {e.splitwise && <span style={{ fontSize: 10, color: "#4FD1C5" }}>↔ Split</span>}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ color: "#FFF", fontWeight: 600, fontSize: 15, fontVariantNumeric: "tabular-nums" }}>{fmt(e.amount)}</div>
-                    <div style={{ color: "#737373", fontSize: 11 }}>{fmtTime(e.date_time)}</div>
-                  </div>
-                </div>
-                {e.comments && <div style={{ color: "#666", fontSize: 11, marginTop: 6, fontStyle: "italic" }}>{e.comments}</div>}
-              </div>)}
-            </div>
-          </div>)}
-        </div>
-      </div>}
-
-      {/* DASHBOARD */}
-      {tab === "dashboard" && <div style={{ padding: 16 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-          <button onClick={() => setDm(p => { let m = p.m - 1, y = p.y; if (m < 0) { m = 11; y--; } return { m, y }; })} style={{ background: "none", border: "none", color: "#999", cursor: "pointer" }}><ChevronLeft size={20} /></button>
-          <div style={{ textAlign: "center" }}><div style={{ color: "#FFF", fontWeight: 600, fontSize: 16 }}>{mName}</div><div style={{ color: "#FFF", fontWeight: 700, fontSize: 24, fontVariantNumeric: "tabular-nums" }}>{fmt(mTotal)}</div></div>
-          <button onClick={() => setDm(p => { let m = p.m + 1, y = p.y; if (m > 11) { m = 0; y++; } return { m, y }; })} style={{ background: "none", border: "none", color: "#999", cursor: "pointer" }}><ChevronRight size={20} /></button>
-        </div>
-        {mExps.length === 0 ? <div style={cs.empty}><BarChart3 size={40} color="#444" style={{ marginBottom: 12 }} /><div>Add some expenses to see your dashboard here.</div></div> : <>
-          <div style={{ ...cs.card, marginTop: 16 }}>
-            <div style={{ color: "#FFF", fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Category Breakdown</div>
-            <div style={{ display: "flex", justifyContent: "center" }}><PieChart width={200} height={200}><Pie data={catData} cx={100} cy={100} innerRadius={55} outerRadius={85} dataKey="value" stroke="none">{catData.map((c, i) => <Cell key={i} fill={c.color} />)}</Pie></PieChart></div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>{catData.map((c, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}><div style={{ width: 10, height: 10, borderRadius: "50%", background: c.color, flexShrink: 0 }} /><span style={{ flex: 1, color: "#CCC" }}>{c.name}</span><span style={{ color: "#FFF", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{fmt(c.value)}</span><span style={{ color: "#737373", fontSize: 11, width: 36, textAlign: "right" }}>{Math.round(c.value / mTotal * 100)}%</span></div>)}</div>
-          </div>
-          <div style={{ ...cs.card, marginTop: 12 }}>
-            <div style={{ color: "#FFF", fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Daily Spend</div>
-            <ResponsiveContainer width="100%" height={160}><BarChart data={dailyData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}><XAxis dataKey="day" tick={{ fill: "#737373", fontSize: 10 }} axisLine={false} tickLine={false} interval={4} /><YAxis tick={{ fill: "#737373", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => v >= 1000 ? (v / 1000) + "k" : v} /><Tooltip contentStyle={{ background: "#1A1A1A", border: "1px solid #333", borderRadius: 8, color: "#FFF", fontSize: 12 }} formatter={v => [fmt(v), "Spent"]} /><Bar dataKey="amount" radius={[3, 3, 0, 0]}>{dailyData.map((d, i) => <Cell key={i} fill={d.amount > avgD ? "#F6AD55" : "#4FD1C5"} />)}</Bar></BarChart></ResponsiveContainer>
-            {avgD > 0 && <div style={{ color: "#737373", fontSize: 11, textAlign: "center", marginTop: 4 }}>Average: {fmt(avgD)}/day</div>}
-          </div>
-          <div style={{ ...cs.card, marginTop: 12 }}>
-            <div style={{ color: "#FFF", fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Top Merchants</div>
-            {topM.map((m, i) => <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}><span style={{ color: "#737373", fontSize: 12, width: 16 }}>{i + 1}.</span><span style={{ flex: 1, color: "#CCC", fontSize: 13 }}>{m.name}</span><span style={{ color: "#FFF", fontWeight: 600, fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{fmt(m.amount)}</span><span style={{ color: "#737373", fontSize: 11 }}>{m.count}x</span></div>)}
-          </div>
-          {payData.length > 0 && <div style={{ ...cs.card, marginTop: 12 }}>
-            <div style={{ color: "#FFF", fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Payment Modes</div>
-            {payData.map((p, i) => { const pct = Math.round(p.value / mTotal * 100); const cl = { GPay: "#4FD1C5", Card: "#B794F4", Cash: "#68D391", UPI: "#63B3ED", "Net Banking": "#F6AD55", Other: "#A0A0A0", "Not set": "#555" }; return <div key={i} style={{ marginBottom: 10 }}><div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 3 }}><span style={{ color: "#CCC" }}>{p.name}</span><span style={{ color: "#999" }}>{fmt(p.value)} ({pct}%)</span></div><div style={{ height: 6, borderRadius: 3, background: "#252525" }}><div style={{ height: 6, borderRadius: 3, background: cl[p.name] || "#666", width: pct + "%" }} /></div></div>; })}
-          </div>}
-        </>}
-      </div>}
-
-      {/* INSIGHTS */}
-      {tab === "insights" && <div style={{ padding: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <div style={{ color: "#FFF", fontSize: 18, fontWeight: 700 }}>Insights</div>
-          <button onClick={loadIns} style={{ background: "#1A1A1A", border: "1px solid #333", borderRadius: 8, color: "#4FD1C5", padding: "6px 14px", fontSize: 12, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, fontFamily: "inherit" }}><RefreshCw size={13} /> {insights ? "Refresh" : "Generate"}</button>
-        </div>
-        {exps.length === 0 ? <div style={cs.empty}><Sparkles size={40} color="#444" style={{ marginBottom: 12 }} /><div>Add some expenses and Dhriti will analyze your spending.</div></div>
-        : insLoading ? <div style={{ ...cs.card, textAlign: "center", padding: 30 }}><div style={{ color: "#4FD1C5", marginBottom: 8 }}>✨</div><div style={{ color: "#999", fontSize: 13 }}>Dhriti is analyzing your spending...</div></div>
-        : insights ? <>
-          <div style={{ ...cs.card, marginBottom: 12, borderLeft: "3px solid #4FD1C5" }}><div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}><Sparkles size={16} color="#4FD1C5" /><span style={{ color: "#FFF", fontWeight: 600, fontSize: 14 }}>Dhriti's Take</span></div><div style={{ color: "#CCC", fontSize: 13, lineHeight: 1.6 }}>{insights.summary}</div></div>
-          {insights.flags?.map((f, i) => { const cl = { warning: "#FC8181", caution: "#F6AD55", positive: "#68D391" }; const ic = { warning: AlertTriangle, caution: TrendingUp, positive: CheckCircle }; const I = ic[f.type] || AlertTriangle; return <div key={i} style={{ ...cs.card, marginBottom: 10, borderLeft: `3px solid ${cl[f.type] || "#999"}` }}><div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><I size={14} color={cl[f.type]} /><span style={{ color: "#FFF", fontWeight: 600, fontSize: 13 }}>{f.title}</span></div><div style={{ color: "#BBB", fontSize: 12, lineHeight: 1.5 }}>{f.detail}</div></div>; })}
-        </> : <div style={{ ...cs.card, textAlign: "center", padding: 24 }}><div style={{ color: "#999", fontSize: 13 }}>Tap "Generate" to get Dhriti's analysis.</div></div>}
-        <div style={{ marginTop: 20 }}>
-          <div style={{ color: "#FFF", fontSize: 15, fontWeight: 600, marginBottom: 10 }}>Ask Dhriti</div>
-          <div style={{ maxHeight: 200, overflowY: "auto", marginBottom: 10 }}>
-            {qa.map((m, i) => <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", marginBottom: 8 }}><div style={{ background: m.role === "user" ? "#4FD1C522" : "#1A1A1A", border: `1px solid ${m.role === "user" ? "#4FD1C533" : "#252525"}`, borderRadius: 12, padding: "8px 12px", maxWidth: "80%", color: "#E2E2E2", fontSize: 13, lineHeight: 1.5 }}>{m.text}</div></div>)}
-            {qaLoad && <div style={{ color: "#4FD1C5", fontSize: 12, padding: 8 }}>Dhriti is thinking...</div>}
-          </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input style={{ flex: 1, background: "#1A1A1A", border: "1px solid #252525", borderRadius: 12, padding: "12px 14px", color: "#E2E2E2", fontSize: 14, outline: "none", fontFamily: "'Inter',sans-serif" }} placeholder="Ask about your spending..." value={qaInp} onChange={e => setQaInp(e.target.value)} onKeyDown={e => { if (e.key === "Enter") askQ(); }} />
-            <button onClick={askQ} style={{ width: 44, height: 44, borderRadius: "50%", background: "#4FD1C5", border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0 }}><Send size={18} color="#FFF" /></button>
-          </div>
-        </div>
-      </div>}
-
-      {/* SETTINGS */}
-      {tab === "settings" && <div style={{ padding: 16 }}>
-        <div style={{ color: "#FFF", fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Settings</div>
-        <div style={{ background: "#1A2A2A", border: "1px solid #4FD1C533", borderRadius: 12, padding: 12, marginBottom: 16, fontSize: 12, color: "#4FD1C5", lineHeight: 1.5 }}>💡 This version uses Claude AI built-in — no API key needed! Voice input works after exporting the app.</div>
-        <div style={cs.lb}>Monthly Budget (₹)</div>
-        <input style={cs.fi} inputMode="numeric" placeholder="e.g., 50000" value={budget} onChange={e => setBudget(e.target.value)} />
-        <div style={cs.lb}>Default Payment Mode</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>{PAYS.map(p => <button key={p} onClick={() => setDefPay(p === defPay ? "" : p)} style={cs.chip(defPay === p)}>{p}</button>)}</div>
-        <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: 10 }}>
-          <button onClick={exportCSV} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: 12, borderRadius: 12, background: "#1A1A1A", border: "1px solid #333", color: "#4FD1C5", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}><Download size={16} /> Export to CSV</button>
-          <button onClick={() => { if (confirmClear === 0) { setConfirmClear(1); show("Tap again to confirm deletion."); } else { setExps([]); setInsights(null); setQa([]); setConfirmClear(0); show("All data cleared."); } }} style={{ padding: 12, borderRadius: 12, background: "transparent", border: "1px solid #FC818155", color: "#FC8181", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>{confirmClear === 1 ? "Are you sure? Tap to confirm." : "Clear All Data"}</button>
-        </div>
-        <div style={{ textAlign: "center", marginTop: 40, color: "#555", fontSize: 12 }}>Dhriti v1.0 — Built with ☕ and Claude</div>
-      </div>}
-
-      {/* BOTTOM SHEET */}
-      {sheet && sheetData && <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", zIndex: 200, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => { setSheet(null); setSheetData(null); }}>
-        <div style={{ background: "#1A1A1A", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: 480, maxHeight: "88vh", overflowY: "auto", padding: "12px 20px 32px" }} onClick={e => e.stopPropagation()}>
-          <div style={{ width: 40, height: 4, borderRadius: 2, background: "#444", margin: "0 auto 16px" }} />
-          <div style={{ textAlign: "center", marginBottom: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-            <span style={{ color: "#999", fontSize: 22 }}>₹</span>
-            <input style={{ background: "transparent", border: "none", color: "#FFF", fontSize: 32, fontWeight: 700, textAlign: "center", width: "60%", outline: "none", fontFamily: "inherit", fontVariantNumeric: "tabular-nums" }} inputMode="decimal" value={sheetData.amount || ""} onChange={e => setSheetData(p => ({ ...p, amount: e.target.value }))} placeholder="0" />
-          </div>
-          <div style={cs.lb}>Location / Merchant</div>
-          <input style={cs.fi} value={sheetData.location} onChange={e => setSheetData(p => ({ ...p, location: e.target.value }))} placeholder="Where did you spend?" />
-          <div style={cs.lb}>Category</div>
-          <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>{CATS.map(c => <button key={c.name} onClick={() => setSheetData(p => ({ ...p, category: c.name }))} style={cs.chip(sheetData.category === c.name, c.color)}>{c.name}</button>)}</div>
-          <div style={cs.lb}>Date</div>
-          <input style={cs.fi} type="date" value={toDateVal(sheetData.date_time)} onChange={e => { const parts = e.target.value.split("-"); if (parts.length === 3) { const nd = new Date(sheetData.date_time); nd.setFullYear(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2])); if (!isNaN(nd.getTime())) setSheetData(p => ({ ...p, date_time: nd.toISOString() })); } }} />
-          <div style={cs.lb}>Time</div>
-          <input style={cs.fi} type="time" value={toTimeVal(sheetData.date_time)} onChange={e => { const parts = e.target.value.split(":"); if (parts.length >= 2) { const nd = new Date(sheetData.date_time); nd.setHours(parseInt(parts[0]), parseInt(parts[1])); if (!isNaN(nd.getTime())) setSheetData(p => ({ ...p, date_time: nd.toISOString() })); } }} />
-          <div style={cs.lb}>Payment Mode</div>
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>{PAYS.map(p => <button key={p} onClick={() => setSheetData(prev => ({ ...prev, payment_mode: p }))} style={cs.chip(sheetData.payment_mode === p)}>{p}</button>)}</div>
-          <div style={cs.lb}>People</div>
-          <input style={cs.fi} value={sheetData.people} onChange={e => setSheetData(p => ({ ...p, people: e.target.value }))} placeholder="Who were you with?" />
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14 }}>
-            <span style={{ color: "#CCC", fontSize: 13 }}>Add to Splitwise?</span>
-            <button onClick={() => setSheetData(p => ({ ...p, splitwise: !p.splitwise }))} style={{ width: 42, height: 24, borderRadius: 12, background: sheetData.splitwise ? "#4FD1C5" : "#333", border: "none", cursor: "pointer", position: "relative" }}><div style={{ width: 18, height: 18, borderRadius: "50%", background: "#FFF", position: "absolute", top: 3, left: sheetData.splitwise ? 21 : 3, transition: "left 0.2s" }} /></button>
-          </div>
-          {sheetData.splitwise && <input style={{ ...cs.fi, marginTop: 8 }} value={sheetData.splitwise_note} onChange={e => setSheetData(p => ({ ...p, splitwise_note: e.target.value }))} placeholder="e.g., Split equally with Rahul" />}
-          <div style={cs.lb}>Additional Comments</div>
-          <input style={cs.fi} value={sheetData.comments} onChange={e => setSheetData(p => ({ ...p, comments: e.target.value }))} placeholder="Any notes?" />
-          <button style={{ width: "100%", padding: 14, borderRadius: 12, background: "#4FD1C5", color: "#000", fontWeight: 700, fontSize: 15, border: "none", cursor: "pointer", marginTop: 18, fontFamily: "inherit" }} onClick={() => save(sheetData)}>Save</button>
-          {sheetData.id && <button style={{ background: "none", border: "none", color: "#FC8181", fontSize: 13, cursor: "pointer", marginTop: 10, fontFamily: "inherit", textAlign: "center", width: "100%" }} onClick={() => del(sheetData.id)}>Delete this expense</button>}
-        </div>
-      </div>}
-
-      {/* NAV */}
-      <nav style={cs.nav}>
-        {[["home", Home, "Home"], ["dashboard", BarChart3, "Dashboard"], ["insights", Sparkles, "Insights"], ["settings", Settings, "Settings"]].map(([id, Icon, label]) => (
-          <button key={id} style={cs.navI(tab === id)} onClick={() => setTab(id)}><Icon size={20} /><span>{label}</span></button>
-        ))}
-      </nav>
-    </div>
-  );
+function setState(updates){
+  Object.assign(state,updates);
+  render();
 }
+
+function showToast(msg){
+  clearTimeout(toastTimer);
+  state.toast=msg;
+  render();
+  toastTimer=setTimeout(()=>{state.toast=null;render()},3500);
+}
+
+// ==================== AI ====================
+async function callAI(prompt,json=true){
+  if(!state.apiKey){showToast("Add your Gemini API key in Settings first.");return null}
+  try{
+    const body={contents:[{role:"user",parts:[{text:json?prompt+"\n\nReturn ONLY valid JSON.":prompt}]}],generationConfig:{temperature:0.2}};
+    if(json)body.generationConfig.responseMimeType="application/json";
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.apiKey}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(!r.ok){showToast("API error ("+r.status+"). Check your key.");return null}
+    const d=await r.json();
+    if(d.candidates?.[0]?.finishReason==="SAFETY"){showToast("Blocked by safety filter.");return null}
+    const t=d.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(!t){showToast("Empty AI response.");return null}
+    if(!json)return t;
+    try{return JSON.parse(t.replace(/```json\s*/g,"").replace(/```\s*/g,"").trim())}catch{showToast("Bad AI format.");return null}
+  }catch(e){console.error(e);showToast("Network error.");return null}
+}
+
+async function parseExpense(raw){
+  if(!raw.trim())return;
+  setState({processing:true});
+  const now=new Date();
+  const p=`You are Dhriti's expense parser. Extract structured data from messy natural language.
+Return ONLY valid JSON:
+{"amount":<number>,"location":"<merchant>","category":"<one of: Dining Out, Groceries, Transport, Shopping, Entertainment, Bills & Utilities, Health, Travel, Work, Miscellaneous>","date":"<YYYY-MM-DD, default ${now.toISOString().split("T")[0]}>","time":"<HH:MM in 24-hour format, default ${String(now.getHours()).padStart(2,"0")}:${String(now.getMinutes()).padStart(2,"0")}>","people":"<names or empty>","splitwise":false,"splitwise_note":"","comments":"<extra context or empty>","payment_mode":"<GPay|Card|Net Banking|Cash|UPI|Other or empty>"}
+RULES: Ignore fillers (hello,hi,so,um,uh,like,basically). Ignore stutters. Parse dates naturally. ALWAYS return time in 24-hour HH:MM (18:46 not 6:46 PM). Map payments (credit card→Card, Google Pay→GPay). Auto-categorize from merchant. Extract people. Food items→comments.
+User: ${raw}`;
+  const res=await callAI(p);
+  if(!res){setState({processing:false});return}
+  const amt=Number(String(res.amount).replace(/[₹,\s]/g,""));
+  if(!amt||isNaN(amt)){showToast("Couldn't find an amount.");setState({processing:false});return}
+  let dt=now;
+  try{
+    const dateStr=res.date||now.toISOString().split("T")[0];
+    let h=now.getHours(),m=now.getMinutes();
+    if(res.time){const raw2=String(res.time).trim();const isPM=/pm/i.test(raw2);const isAM=/am/i.test(raw2);const cleaned=raw2.replace(/\s*(am|pm)\s*/gi,"").trim();const parts=cleaned.split(/[:.]/);let pH=parseInt(parts[0])||0;let pM=parseInt(parts[1])||0;if(isPM&&pH<12)pH+=12;if(isAM&&pH===12)pH=0;if(pH>=0&&pH<=23)h=pH;if(pM>=0&&pM<=59)m=pM}
+    const c=new Date(dateStr+"T"+String(h).padStart(2,"0")+":"+String(m).padStart(2,"0")+":00");
+    if(!isNaN(c.getTime()))dt=c;
+  }catch{}
+  setState({processing:false,inp:"",sheet:"open",sheetData:{id:null,date_time:dt.toISOString(),amount:amt,category:res.category||"Miscellaneous",location:res.location||"",people:res.people||"",splitwise:!!res.splitwise,splitwise_note:res.splitwise_note||"",comments:res.comments||"",payment_mode:res.payment_mode||state.defPay||""}});
+}
+
+// ==================== VOICE ====================
+async function startMic(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){showToast("Voice not supported. Use Chrome.");return}
+  try{await navigator.mediaDevices.getUserMedia({audio:true})}catch{showToast("Allow microphone in browser settings.");return}
+  const r=new SR();r.lang="en-IN";r.continuous=true;r.interimResults=true;transRef="";
+  r.onresult=e=>{let f="",i="";for(let j=0;j<e.results.length;j++){if(e.results[j].isFinal)f+=e.results[j][0].transcript+" ";else i+=e.results[j][0].transcript}transRef=f;state.inp=f+i;render()};
+  r.onerror=e=>{console.error("Speech:",e.error);state.listening=false;render();if(e.error==="not-allowed")showToast("Mic blocked. Check browser settings.");else showToast("Voice error. Try typing.")};
+  r.onend=()=>{};
+  recRef=r;r.start();setState({listening:true});
+}
+function stopMic(){
+  if(recRef){try{recRef.stop()}catch{}}recRef=null;
+  const t=(transRef||"").trim()||state.inp.trim();
+  setState({listening:false});
+  if(t)parseExpense(t);
+}
+function micClick(){if(state.listening)stopMic();else startMic()}
+function sendClick(){if(state.inp.trim())parseExpense(state.inp.trim())}
+
+// ==================== ACTIONS ====================
+function saveExpense(){
+  const d=state.sheetData;if(!d)return;
+  if(d.id){state.exps=state.exps.map(e=>e.id===d.id?{...d}:e)}
+  else{state.exps=[{...d,id:uid(),created_at:new Date().toISOString()},...state.exps]}
+  setState({sheet:null,sheetData:null});
+}
+function delExpense(){
+  const d=state.sheetData;if(!d||!d.id)return;
+  state.exps=state.exps.filter(e=>e.id!==d.id);
+  setState({sheet:null,sheetData:null});
+}
+function exportCSV(){
+  if(!state.exps.length){showToast("No expenses.");return}
+  const h="Date & Time,Amount,Category,Location,People,Splitwise,Splitwise Note,Payment Mode,Comments";
+  const rows=state.exps.map(e=>[fmtDMY(e.date_time)+" "+fmtTime(e.date_time),e.amount,e.category,'"'+e.location+'"','"'+e.people+'"',e.splitwise?"Yes":"No",'"'+e.splitwise_note+'"',e.payment_mode,'"'+e.comments+'"'].join(","));
+  const b=new Blob([h+"\n"+rows.join("\n")],{type:"text/csv"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="dhriti-expenses-"+new Date().getFullYear()+"-"+String(new Date().getMonth()+1).padStart(2,"0")+".csv";a.click();
+}
+async function loadInsights(){
+  const now=new Date();
+  const cur=state.exps.filter(e=>{const d=new Date(e.date_time);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
+  if(!cur.length){showToast("Add expenses first!");return}
+  setState({insLoading:true});
+  const total=cur.reduce((s,e)=>s+(Number(e.amount)||0),0);
+  const p=`You are Dhriti, a personal finance assistant. Be conversational, specific with numbers, like a smart friend. Not preachy.
+Return ONLY JSON: {"summary":"<3-5 sentences with amounts>","flags":[{"type":"<warning|caution|positive>","title":"<5-8 words>","detail":"<1-2 sentences with numbers>"}]}
+3-6 flags, at least one positive.
+Data: ${JSON.stringify(cur.map(e=>({amount:e.amount,category:e.category,location:e.location,date:e.date_time,people:e.people})))}
+Total: ${fmt(total)}`;
+  const d=await callAI(p);setState({insLoading:false});if(d)setState({insights:d});
+}
+async function askDhriti(){
+  if(!state.qaInp.trim())return;const q=state.qaInp.trim();
+  state.qa.push({role:"user",text:q});setState({qaInp:"",qaLoad:true});
+  const p=`You are Dhriti, expense tracker assistant. Answer with exact numbers, 2-4 sentences.
+Data: ${JSON.stringify(state.exps.map(e=>({amount:e.amount,category:e.category,location:e.location,date:e.date_time,people:e.people,payment:e.payment_mode,comments:e.comments})))}
+Question: ${q}`;
+  const a=await callAI(p,false);state.qa.push({role:"ai",text:a||"Sorry, couldn't figure that out."});setState({qaLoad:false});
+}
+
+// ==================== SVG DONUT ====================
+function donutSVG(data,total){
+  if(!data.length)return"";
+  let cum=0;const r=70,cx=100,cy=100,ir=45;
+  const paths=data.map(d=>{
+    const pct=d.value/total;const start=cum*Math.PI*2-Math.PI/2;cum+=pct;const end=cum*Math.PI*2-Math.PI/2;
+    const la=pct>0.5?1:0;
+    const x1=cx+r*Math.cos(start),y1=cy+r*Math.sin(start),x2=cx+r*Math.cos(end),y2=cy+r*Math.sin(end);
+    const ix1=cx+ir*Math.cos(end),iy1=cy+ir*Math.sin(end),ix2=cx+ir*Math.cos(start),iy2=cy+ir*Math.sin(start);
+    if(pct>=0.999)return`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${d.color}" /><circle cx="${cx}" cy="${cy}" r="${ir}" fill="#1A1A1A" />`;
+    return`<path d="M${x1},${y1} A${r},${r} 0 ${la} 1 ${x2},${y2} L${ix1},${iy1} A${ir},${ir} 0 ${la} 0 ${ix2},${iy2} Z" fill="${d.color}"/>`;
+  }).join("");
+  return`<svg viewBox="0 0 200 200" width="180" height="180" xmlns="http://www.w3.org/2000/svg">${paths}<text x="${cx}" y="${cy-4}" text-anchor="middle" fill="#FFF" font-size="14" font-weight="700" font-family="Inter">${fmt(total)}</text><text x="${cx}" y="${cy+12}" text-anchor="middle" fill="#737373" font-size="9" font-family="Inter">total</text></svg>`;
+}
+
+// ==================== RENDER ====================
+function render(){
+  const el=document.getElementById("app");
+  const s=state;
+  const now=new Date();
+  const curExps=s.exps.filter(e=>{const d=new Date(e.date_time);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()});
+  const curTotal=curExps.reduce((a,e)=>a+(Number(e.amount)||0),0);
+  const mExps=s.exps.filter(e=>{const d=new Date(e.date_time);return d.getMonth()===s.dm.m&&d.getFullYear()===s.dm.y});
+  const mTotal=mExps.reduce((a,e)=>a+(Number(e.amount)||0),0);
+  const mName=new Date(s.dm.y,s.dm.m).toLocaleString("en-IN",{month:"long",year:"numeric"});
+
+  let html="";
+
+  // Toast
+  if(s.toast)html+=`<div class="toast">${esc(s.toast)}</div>`;
+
+  // HOME
+  if(s.tab==="home"){
+    html+=`<div class="header"><div class="brand">Dhriti</div><div><div class="month-label">${now.toLocaleString("en-IN",{month:"long",year:"numeric"}).toUpperCase()}</div><div class="total">${fmt(curTotal)}</div></div></div>`;
+    html+=`<div class="input-bar"><input class="text-input" id="mainInput" placeholder="${s.processing?"Dhriti is thinking...":"What did you spend on?"}" value="${esc(s.inp)}" ${s.processing?"disabled":""}><button class="mic-btn ${s.listening?"active":"idle"}" onclick="micClick()">🎤</button>`;
+    if(s.inp.trim()&&!s.listening)html+=`<button class="send-btn" onclick="sendClick()">↑</button>`;
+    html+=`</div>`;
+    if(s.listening)html+=`<div style="text-align:center;color:#FC8181;font-size:12px;margin-bottom:8px">Listening... tap mic to stop</div>`;
+    if(s.processing)html+=`<div style="text-align:center;color:#4FD1C5;font-size:12px;margin-bottom:8px">Dhriti is thinking...</div>`;
+    html+=`<div style="padding:0 16px">`;
+    if(!s.exps.length){
+      html+=`<div class="empty"><div style="font-size:48px;margin-bottom:16px">👛</div><div style="font-size:15px;color:#888;margin-bottom:6px">No expenses yet</div><div style="font-size:13px">Tap the mic or type above to add your first one!</div></div>`;
+    }else{
+      const grps=groupByDate(s.exps);
+      grps.forEach(g=>{
+        html+=`<div style="color:#737373;font-size:12px;padding:14px 0 8px;border-bottom:1px solid #1A1A1A">${esc(g.label)}</div><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">`;
+        g.items.forEach(e=>{
+          const cat=CATS.find(c=>c.name===e.category)||CATS[9];
+          html+=`<div class="card" onclick="setState({sheetData:JSON.parse(this.dataset.e),sheet:'open'})" data-e='${JSON.stringify(e).replace(/'/g,"&#39;")}'>`;
+          html+=`<div style="display:flex;align-items:center;gap:12px">`;
+          html+=`<div style="width:28px;height:28px;border-radius:50%;background:${cat.color}22;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px">${cat.emoji}</div>`;
+          html+=`<div style="flex:1;min-width:0"><div style="color:#FFF;font-weight:600;font-size:14px">${esc(e.location||"Unknown")}</div><div style="color:#737373;font-size:12px">${esc(e.category)}</div>`;
+          if(e.people||e.splitwise){
+            html+=`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px">`;
+            if(e.people)e.people.split(",").forEach(p=>{html+=`<span style="font-size:10px;color:#999;border:1px solid #333;border-radius:999px;padding:1px 8px">${esc(p.trim())}</span>`});
+            if(e.splitwise)html+=`<span style="font-size:10px;color:#4FD1C5">↔ Split</span>`;
+            html+=`</div>`;
+          }
+          html+=`</div><div style="text-align:right;flex-shrink:0"><div style="color:#FFF;font-weight:600;font-size:15px;font-variant-numeric:tabular-nums">${fmt(e.amount)}</div><div style="color:#737373;font-size:11px">${fmtTime(e.date_time)}</div></div></div>`;
+          if(e.comments)html+=`<div style="color:#666;font-size:11px;margin-top:6px;font-style:italic">${esc(e.comments)}</div>`;
+          html+=`</div>`;
+        });
+        html+=`</div>`;
+      });
+    }
+    html+=`</div>`;
+  }
+
+  // DASHBOARD
+  if(s.tab==="dashboard"){
+    html+=`<div style="padding:16px">`;
+    html+=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><button onclick="setState({dm:{m:state.dm.m===0?11:state.dm.m-1,y:state.dm.m===0?state.dm.y-1:state.dm.y}})" style="background:none;border:none;color:#999;cursor:pointer;font-size:20px">◀</button><div style="text-align:center"><div style="color:#FFF;font-weight:600;font-size:16px">${esc(mName)}</div><div style="color:#FFF;font-weight:700;font-size:24px;font-variant-numeric:tabular-nums">${fmt(mTotal)}</div></div><button onclick="setState({dm:{m:state.dm.m===11?0:state.dm.m+1,y:state.dm.m===11?state.dm.y+1:state.dm.y}})" style="background:none;border:none;color:#999;cursor:pointer;font-size:20px">▶</button></div>`;
+    if(!mExps.length){
+      html+=`<div class="empty">Add expenses to see your dashboard.</div>`;
+    }else{
+      // Category breakdown
+      const catMap={};mExps.forEach(e=>{catMap[e.category]=(catMap[e.category]||0)+Number(e.amount)});
+      const catData=CATS.map(c=>({name:c.name,value:catMap[c.name]||0,color:c.color})).filter(c=>c.value>0).sort((a,b)=>b.value-a.value);
+      html+=`<div class="card" style="margin-top:16px"><div style="color:#FFF;font-size:16px;font-weight:600;margin-bottom:12px">Category Breakdown</div><div class="donut-container">${donutSVG(catData,mTotal)}</div>`;
+      html+=`<div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">`;
+      catData.forEach(c=>{html+=`<div style="display:flex;align-items:center;gap:8px;font-size:13px"><div style="width:10px;height:10px;border-radius:50%;background:${c.color};flex-shrink:0"></div><span style="flex:1;color:#CCC">${esc(c.name)}</span><span style="color:#FFF;font-weight:600;font-variant-numeric:tabular-nums">${fmt(c.value)}</span><span style="color:#737373;font-size:11px;width:36px;text-align:right">${Math.round(c.value/mTotal*100)}%</span></div>`});
+      html+=`</div></div>`;
+
+      // Daily spend bars
+      const days=new Date(s.dm.y,s.dm.m+1,0).getDate();
+      const dayMap={};mExps.forEach(e=>{const d=new Date(e.date_time).getDate();dayMap[d]=(dayMap[d]||0)+Number(e.amount)});
+      const dayData=Array.from({length:days},(_,i)=>({day:i+1,amount:dayMap[i+1]||0}));
+      const maxDay=Math.max(...dayData.map(d=>d.amount),1);
+      const daysWithSpend=dayData.filter(d=>d.amount>0);
+      const avgD=daysWithSpend.length?Math.round(mTotal/daysWithSpend.length):0;
+      html+=`<div class="card" style="margin-top:12px"><div style="color:#FFF;font-size:16px;font-weight:600;margin-bottom:12px">Daily Spend</div><div class="bar-row">`;
+      dayData.forEach(d=>{
+        const h=d.amount?Math.max((d.amount/maxDay)*100,4):0;
+        const color=d.amount>avgD?"#F6AD55":"#4FD1C5";
+        html+=`<div class="bar-col"><div class="bar-fill" style="height:${h}%;background:${color}"></div><div class="bar-label">${d.day}</div></div>`;
+      });
+      html+=`</div>`;
+      if(avgD)html+=`<div style="color:#737373;font-size:11px;text-align:center;margin-top:8px">Average: ${fmt(avgD)}/day</div>`;
+      html+=`</div>`;
+
+      // Top merchants
+      const mMap={};mExps.forEach(e=>{const k=e.location||"Unknown";if(!mMap[k])mMap[k]={a:0,c:0};mMap[k].a+=Number(e.amount);mMap[k].c++});
+      const topM=Object.entries(mMap).map(([n,v])=>({name:n,amount:v.a,count:v.c})).sort((a,b)=>b.amount-a.amount).slice(0,5);
+      html+=`<div class="card" style="margin-top:12px"><div style="color:#FFF;font-size:16px;font-weight:600;margin-bottom:12px">Top Merchants</div>`;
+      topM.forEach((m,i)=>{html+=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="color:#737373;font-size:12px;width:16px">${i+1}.</span><span style="flex:1;color:#CCC;font-size:13px">${esc(m.name)}</span><span style="color:#FFF;font-weight:600;font-size:13px;font-variant-numeric:tabular-nums">${fmt(m.amount)}</span><span style="color:#737373;font-size:11px">${m.count}x</span></div>`});
+      html+=`</div>`;
+
+      // Payment modes
+      const pMap={};mExps.forEach(e=>{const p=e.payment_mode||"Not set";pMap[p]=(pMap[p]||0)+Number(e.amount)});
+      const payData=Object.entries(pMap).map(([n,v])=>({name:n,value:v})).sort((a,b)=>b.value-a.value);
+      const pcl={GPay:"#4FD1C5",Card:"#B794F4",Cash:"#68D391",UPI:"#63B3ED","Net Banking":"#F6AD55",Other:"#A0A0A0","Not set":"#555"};
+      html+=`<div class="card" style="margin-top:12px"><div style="color:#FFF;font-size:16px;font-weight:600;margin-bottom:12px">Payment Modes</div>`;
+      payData.forEach(p=>{const pct=Math.round(p.value/mTotal*100);html+=`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:#CCC">${esc(p.name)}</span><span style="color:#999">${fmt(p.value)} (${pct}%)</span></div><div class="progress-bg"><div class="progress-fill" style="background:${pcl[p.name]||"#666"};width:${pct}%"></div></div></div>`});
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+  }
+
+  // INSIGHTS
+  if(s.tab==="insights"){
+    html+=`<div style="padding:16px">`;
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div style="color:#FFF;font-size:18px;font-weight:700">Insights</div><button onclick="loadInsights()" style="background:#1A1A1A;border:1px solid #333;border-radius:8px;color:#4FD1C5;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit">${s.insights?"🔄 Refresh":"✨ Generate"}</button></div>`;
+    if(!s.exps.length){
+      html+=`<div class="empty">Add expenses and Dhriti will analyze your spending.</div>`;
+    }else if(s.insLoading){
+      html+=`<div class="card" style="text-align:center;padding:30px"><div style="color:#999;font-size:13px">✨ Dhriti is analyzing...</div></div>`;
+    }else if(s.insights){
+      html+=`<div class="card flag-card" style="margin-bottom:12px;border-left-color:#4FD1C5"><div style="color:#FFF;font-weight:600;font-size:14px;margin-bottom:8px">✨ Dhriti's Take</div><div style="color:#CCC;font-size:13px;line-height:1.6">${esc(s.insights.summary)}</div></div>`;
+      if(s.insights.flags)s.insights.flags.forEach(f=>{
+        const cl={warning:"#FC8181",caution:"#F6AD55",positive:"#68D391"};const em={warning:"⚠️",caution:"📈",positive:"✅"};
+        html+=`<div class="card flag-card" style="margin-bottom:10px;border-left-color:${cl[f.type]||"#999"}"><div style="color:#FFF;font-weight:600;font-size:13px;margin-bottom:4px">${em[f.type]||""} ${esc(f.title)}</div><div style="color:#BBB;font-size:12px;line-height:1.5">${esc(f.detail)}</div></div>`;
+      });
+    }else{
+      html+=`<div class="card" style="text-align:center;padding:24px"><div style="color:#999;font-size:13px">Tap "Generate" for Dhriti's analysis.</div></div>`;
+    }
+    // Ask Dhriti
+    html+=`<div style="margin-top:20px"><div style="color:#FFF;font-size:15px;font-weight:600;margin-bottom:10px">Ask Dhriti</div>`;
+    html+=`<div id="qaScroll" style="max-height:200px;overflow-y:auto;margin-bottom:10px">`;
+    s.qa.forEach(m=>{html+=`<div style="display:flex;justify-content:${m.role==="user"?"flex-end":"flex-start"};margin-bottom:8px"><div class="chat-bubble" style="background:${m.role==="user"?"#4FD1C522":"#1A1A1A"};border:1px solid ${m.role==="user"?"#4FD1C533":"#252525"};color:#E2E2E2">${esc(m.text)}</div></div>`});
+    if(s.qaLoad)html+=`<div style="color:#4FD1C5;font-size:12px;padding:8px">Dhriti is thinking...</div>`;
+    html+=`</div>`;
+    html+=`<div style="display:flex;gap:8px"><input class="text-input" id="qaInput" placeholder="Ask about your spending..." value="${esc(s.qaInp)}"><button class="send-btn" onclick="askDhriti()">➤</button></div></div>`;
+    html+=`</div>`;
+  }
+
+  // SETTINGS
+  if(s.tab==="settings"){
+    html+=`<div style="padding:16px"><div style="color:#FFF;font-size:18px;font-weight:700;margin-bottom:20px">Settings</div>`;
+    html+=`<div class="lb">Google Gemini API Key</div><input class="fi" id="keyInput" type="password" placeholder="Paste your Gemini API key" value="${esc(s.apiKey)}"><div style="color:#737373;font-size:11px;margin-top:4px">Get yours free at aistudio.google.com</div>`;
+    html+=`<div class="lb">Monthly Budget (₹)</div><input class="fi" id="budgetInput" inputmode="numeric" placeholder="e.g., 50000" value="${esc(s.budget)}">`;
+    html+=`<div class="lb">Default Payment Mode</div><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">`;
+    PAYS.forEach(p=>{html+=`<button class="chip ${s.defPay===p?"active":""}" style="border:1px solid #444;${s.defPay===p?"background:#4FD1C533;color:#FFF":"color:#999"}" onclick="setState({defPay:state.defPay==='${p}'?'':'${p}'})">${p}</button>`});
+    html+=`</div>`;
+    html+=`<div style="margin-top:24px;display:flex;flex-direction:column;gap:10px"><button onclick="exportCSV()" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border-radius:12px;background:#1A1A1A;border:1px solid #333;color:#4FD1C5;font-size:14px;cursor:pointer;font-family:inherit">📥 Export to CSV</button>`;
+    html+=`<button onclick="if(state.confirmClear===0){state.confirmClear=1;showToast('Tap again to confirm.')}else{state.exps=[];state.insights=null;state.qa=[];state.confirmClear=0;showToast('All data cleared.')}" style="padding:12px;border-radius:12px;background:transparent;border:1px solid #FC818155;color:#FC8181;font-size:14px;cursor:pointer;font-family:inherit">${s.confirmClear===1?"Are you sure? Tap to confirm.":"Clear All Data"}</button></div>`;
+    html+=`<div style="text-align:center;margin-top:40px;color:#555;font-size:12px">Dhriti v1.0 — Built with ☕ and Gemini</div></div>`;
+  }
+
+  // BOTTOM SHEET
+  if(s.sheet&&s.sheetData){
+    const d=s.sheetData;
+    html+=`<div class="overlay" onclick="setState({sheet:null,sheetData:null})"><div class="sheet" onclick="event.stopPropagation()">`;
+    html+=`<div class="handle"></div>`;
+    html+=`<div style="text-align:center;margin-bottom:8px;display:flex;align-items:center;justify-content:center;gap:4px"><span style="color:#999;font-size:22px">₹</span><input id="sheetAmt" class="fi" style="background:transparent;border:none;color:#FFF;font-size:32px;font-weight:700;text-align:center;width:60%;font-variant-numeric:tabular-nums" inputmode="decimal" value="${d.amount||""}" placeholder="0"></div>`;
+    html+=`<div class="lb">Location / Merchant</div><input id="sheetLoc" class="fi" value="${esc(d.location)}" placeholder="Where did you spend?">`;
+    html+=`<div class="lb">Category</div><div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px">`;
+    CATS.forEach(c=>{html+=`<button class="chip ${d.category===c.name?"active":""}" style="border:1px solid ${c.color};${d.category===c.name?"background:"+c.color+"33;color:#FFF":"color:#999"}" onclick="state.sheetData.category='${c.name}';render()">${c.name}</button>`});
+    html+=`</div>`;
+    html+=`<div class="lb">Date</div><input id="sheetDate" class="fi" type="date" value="${toDateVal(d.date_time)}">`;
+    html+=`<div class="lb">Time</div><input id="sheetTime" class="fi" type="time" value="${toTimeVal(d.date_time)}">`;
+    html+=`<div class="lb">Payment Mode</div><div style="display:flex;gap:6px;flex-wrap:wrap">`;
+    PAYS.forEach(p=>{html+=`<button class="chip ${d.payment_mode===p?"active":""}" style="border:1px solid #444;${d.payment_mode===p?"background:#4FD1C533;color:#FFF":"color:#999"}" onclick="state.sheetData.payment_mode='${p}';render()">${p}</button>`});
+    html+=`</div>`;
+    html+=`<div class="lb">People</div><input id="sheetPeople" class="fi" value="${esc(d.people)}" placeholder="Who were you with?">`;
+    html+=`<div style="display:flex;align-items:center;gap:10px;margin-top:14px"><span style="color:#CCC;font-size:13px">Add to Splitwise?</span><button class="toggle" style="background:${d.splitwise?"#4FD1C5":"#333"}" onclick="state.sheetData.splitwise=!state.sheetData.splitwise;render()"><div class="toggle-knob" style="left:${d.splitwise?"21px":"3px"}"></div></button></div>`;
+    if(d.splitwise)html+=`<input id="sheetSplit" class="fi" style="margin-top:8px" value="${esc(d.splitwise_note)}" placeholder="e.g., Split equally with Rahul">`;
+    html+=`<div class="lb">Additional Comments</div><input id="sheetComments" class="fi" value="${esc(d.comments)}" placeholder="Any notes?">`;
+    html+=`<button class="save-btn" onclick="syncSheetInputs();saveExpense()">Save</button>`;
+    if(d.id)html+=`<button class="del-btn" onclick="delExpense()">Delete this expense</button>`;
+    html+=`</div></div>`;
+  }
+
+  // NAV
+  html+=`<nav class="nav">`;
+  [["home","🏠","Home"],["dashboard","📊","Dashboard"],["insights","✨","Insights"],["settings","⚙️","Settings"]].forEach(([id,em,label])=>{
+    html+=`<button class="nav-item ${s.tab===id?"active":"inactive"}" onclick="setState({tab:'${id}'})"><span style="font-size:18px">${em}</span><span>${label}</span></button>`;
+  });
+  html+=`</nav>`;
+
+  el.innerHTML=html;
+
+  // Bind inputs after render
+  const mi=document.getElementById("mainInput");
+  if(mi){mi.oninput=e=>{state.inp=e.target.value};mi.onkeydown=e=>{if(e.key==="Enter")sendClick()}}
+  const qi=document.getElementById("qaInput");
+  if(qi){qi.oninput=e=>{state.qaInp=e.target.value};qi.onkeydown=e=>{if(e.key==="Enter")askDhriti()}}
+  const ki=document.getElementById("keyInput");
+  if(ki)ki.oninput=e=>{state.apiKey=e.target.value};
+  const bi=document.getElementById("budgetInput");
+  if(bi)bi.oninput=e=>{state.budget=e.target.value};
+}
+
+function syncSheetInputs(){
+  const d=state.sheetData;if(!d)return;
+  const a=document.getElementById("sheetAmt");if(a)d.amount=a.value;
+  const l=document.getElementById("sheetLoc");if(l)d.location=l.value;
+  const dt=document.getElementById("sheetDate");
+  const tm=document.getElementById("sheetTime");
+  if(dt&&tm){
+    try{
+      const prev=new Date(d.date_time);
+      const parts=dt.value.split("-");
+      const tparts=tm.value.split(":");
+      if(parts.length===3&&tparts.length>=2){
+        const nd=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]),parseInt(tparts[0]),parseInt(tparts[1]));
+        if(!isNaN(nd.getTime()))d.date_time=nd.toISOString();
+      }
+    }catch{}
+  }
+  const p=document.getElementById("sheetPeople");if(p)d.people=p.value;
+  const sp=document.getElementById("sheetSplit");if(sp)d.splitwise_note=sp.value;
+  const c=document.getElementById("sheetComments");if(c)d.comments=c.value;
+}
+
+// Initial render
+render();
+</script>
+</body>
+</html>
